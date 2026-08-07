@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة إدارة سَهِّلها</title>
+<meta name="theme-color" content="#2E7D4F">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="icon" href="assets/icons/icon-192.png">
+</head>
+<body>
+<div class="admin-guard" id="adminGuard"><div class="guard-card"><div class="guard-icon">🔐</div><h2 id="guardTitle">جارٍ التحقق…</h2><p id="guardMessage">نتأكد من صلاحية حساب المدير.</p><a class="primary" id="guardAction" href="./" style="display:none;text-decoration:none">العودة إلى التطبيق</a></div></div>
+
+<div class="admin-shell">
+<header class="admin-header"><div class="admin-header-inner"><div class="admin-brand"><h1>🛠️ لوحة إدارة سَهِّلها</h1><p id="adminIdentity">إدارة المحتوى التعليمي</p></div><a href="./">التطبيق</a><button id="adminLogout" type="button">خروج</button></div></header>
+<main class="admin-main">
+<section class="stats">
+<div class="stat"><strong id="statSubjects">—</strong><span>المواد</span></div>
+<div class="stat"><strong id="statQuestions">—</strong><span>الأسئلة</span></div>
+<div class="stat"><strong id="statCards">—</strong><span>البطاقات</span></div>
+<div class="stat"><strong id="statResources">—</strong><span>الموارد</span></div>
+</section>
+<nav class="tabs" aria-label="أقسام الإدارة">
+<button class="tab active" data-panel="subjects" type="button">📚 المواد</button>
+<button class="tab" data-panel="questions" type="button">🧠 الأسئلة</button>
+<button class="tab" data-panel="cards" type="button">🃏 البطاقات</button>
+<button class="tab" data-panel="resources" type="button">📎 الموارد</button>
+</nav>
+
+<section class="panel active" id="panel-subjects">
+<div class="layout">
+<form class="card" id="subjectForm"><h2>إضافة أو تعديل مادة</h2><input type="hidden" id="subjectId">
+<div class="form-grid"><div class="field"><label for="subjectCode">الرمز الإنجليزي</label><input id="subjectCode" required maxlength="40" pattern="[A-Za-z0-9_-]+" placeholder="math1s2"></div><div class="field"><label for="subjectIcon">الأيقونة</label><input id="subjectIcon" maxlength="8" value="📘"></div></div>
+<div class="field"><label for="subjectName">اسم المادة</label><input id="subjectName" required maxlength="100" placeholder="الرياضيات 2"></div>
+<div class="form-grid"><div class="field"><label for="subjectGrade">الصف</label><select id="subjectGrade"><option value="1high">أول ثانوي</option><option value="2high">ثاني ثانوي</option><option value="3high">ثالث ثانوي</option></select></div><div class="field"><label for="subjectSemester">الفصل</label><select id="subjectSemester"><option value="s1">الفصل الأول</option><option value="s2">الفصل الثاني</option></select></div></div>
+<div class="field"><label for="subjectUnits">الوحدات والدروس (JSON)</label><textarea id="subjectUnits" dir="ltr" required>[{"name":"الوحدة الأولى","lessons":["الدرس الأول","الدرس الثاني"]}]</textarea><div class="field-hint" id="unitsValidation">اكتب مصفوفة وحدات، وكل وحدة تحتوي name وlessons.</div></div>
+<div class="form-grid"><div class="field"><label for="subjectOrder">الترتيب</label><input id="subjectOrder" type="number" value="0"></div><label class="checkline"><input id="subjectActive" type="checkbox" checked> منشورة للطلاب</label></div>
+<div class="form-actions"><button class="primary" type="submit">حفظ المادة</button><button class="secondary" type="button" data-reset="subject">جديد</button></div></form>
+<div class="card"><div class="list-toolbar"><input id="subjectSearch" placeholder="بحث في المواد…"></div><div class="records" id="subjectList"></div></div>
+</div>
+</section>
+
+<section class="panel" id="panel-questions">
+<div class="layout">
+<form class="card" id="questionForm"><h2>إضافة أو تعديل سؤال</h2><input type="hidden" id="questionId">
+<div class="form-grid"><div class="field"><label for="questionCategory">رمز التصنيف</label><input id="questionCategory" required maxlength="40" value="math" pattern="[A-Za-z0-9_-]+"></div><div class="field"><label for="questionCategoryLabel">اسم التصنيف</label><input id="questionCategoryLabel" required maxlength="80" value="📗 الرياضيات"></div></div>
+<div class="field"><label for="questionText">السؤال</label><textarea id="questionText" required maxlength="1000" placeholder="اكتب السؤال…"></textarea></div>
+<div class="field"><label for="questionOptions">الخيارات — خيار في كل سطر</label><textarea id="questionOptions" required placeholder="الخيار الصحيح&#10;الخيار الثاني&#10;الخيار الثالث&#10;الخيار الرابع"></textarea></div>
+<div class="form-grid"><div class="field"><label for="questionCorrect">رقم الإجابة الصحيحة</label><input id="questionCorrect" type="number" min="1" max="8" value="1" required></div><div class="field"><label for="questionGrade">الصف (اختياري)</label><select id="questionGrade"><option value="">كل الصفوف</option><option value="1high">أول ثانوي</option><option value="2high">ثاني ثانوي</option><option value="3high">ثالث ثانوي</option></select></div></div>
+<div class="field"><label for="questionExplanation">شرح الإجابة</label><textarea id="questionExplanation" maxlength="1500" placeholder="لماذا هذه الإجابة صحيحة؟"></textarea></div>
+<label class="checkline"><input id="questionActive" type="checkbox" checked> منشور</label>
+<div class="form-actions"><button class="primary" type="submit">حفظ السؤال</button><button class="secondary" type="button" data-reset="question">جديد</button></div></form>
+<div class="card"><div class="list-toolbar"><input id="questionSearch" placeholder="بحث في الأسئلة…"></div><div class="records" id="questionList"></div></div>
+</div>
+</section>
+
+<section class="panel" id="panel-cards">
+<div class="layout">
+<form class="card" id="cardForm"><h2>إضافة أو تعديل بطاقة</h2><input type="hidden" id="cardId">
+<div class="form-grid"><div class="field"><label for="cardCategory">رمز التصنيف</label><input id="cardCategory" required maxlength="40" value="science" pattern="[A-Za-z0-9_-]+"></div><div class="field"><label for="cardCategoryLabel">اسم التصنيف</label><input id="cardCategoryLabel" required maxlength="80" value="🔬 علوم"></div></div>
+<div class="field"><label for="cardQuestion">وجه البطاقة</label><textarea id="cardQuestion" required maxlength="1000"></textarea></div>
+<div class="field"><label for="cardAnswer">الإجابة</label><textarea id="cardAnswer" required maxlength="2000"></textarea></div>
+<div class="field"><label for="cardGrade">الصف (اختياري)</label><select id="cardGrade"><option value="">كل الصفوف</option><option value="1high">أول ثانوي</option><option value="2high">ثاني ثانوي</option><option value="3high">ثالث ثانوي</option></select></div>
+<label class="checkline"><input id="cardActive" type="checkbox" checked> منشورة</label>
+<div class="form-actions"><button class="primary" type="submit">حفظ البطاقة</button><button class="secondary" type="button" data-reset="card">جديد</button></div></form>
+<div class="card"><div class="list-toolbar"><input id="cardSearch" placeholder="بحث في البطاقات…"></div><div class="records" id="cardList"></div></div>
+</div>
+</section>
+
+<section class="panel" id="panel-resources">
+<div class="layout">
+<form class="card" id="resourceForm"><h2>إضافة أو تعديل مورد</h2><input type="hidden" id="resourceId"><input type="hidden" id="resourceFilePath"><input type="hidden" id="resourcePublicUrl">
+<div class="warning">ارفع فقط ملفات تملك حق نشرها، أو استخدم رابطًا رسميًا من وزارة التعليم. لا ترفع كتبًا محمية دون إذن.</div>
+<div class="field"><label for="resourceSubject">المادة</label><select id="resourceSubject" required><option value="">اختر المادة</option></select></div>
+<div class="field"><label for="resourceTitle">العنوان</label><input id="resourceTitle" required maxlength="150" placeholder="كتاب الطالب أو ملخص الوحدة"></div>
+<div class="form-grid"><div class="field"><label for="resourceType">النوع</label><select id="resourceType"><option value="book">كتاب</option><option value="summary">ملخص</option><option value="worksheet">ورقة عمل</option><option value="video">فيديو</option><option value="link">رابط</option><option value="file">ملف</option></select></div><div class="field"><label for="resourceOrder">الترتيب</label><input id="resourceOrder" type="number" value="0"></div></div>
+<div class="field"><label for="resourceDescription">الوصف</label><textarea id="resourceDescription" maxlength="500"></textarea></div>
+<div class="field"><label for="resourceUrl">رابط خارجي (اختياري)</label><input id="resourceUrl" type="url" placeholder="https://…" dir="ltr"></div>
+<div class="field"><label for="resourceFile">أو ارفع ملفًا (PDF/صورة — 50MB)</label><input id="resourceFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,text/plain"><div class="upload-progress" id="uploadProgress" hidden><span></span></div></div>
+<label class="checkline"><input id="resourceActive" type="checkbox" checked> منشور</label>
+<div class="form-actions"><button class="primary" type="submit">حفظ المورد</button><button class="secondary" type="button" data-reset="resource">جديد</button></div></form>
+<div class="card"><div class="list-toolbar"><input id="resourceSearch" placeholder="بحث في الموارد…"></div><div class="records" id="resourceList"></div></div>
+</div>
+</section>
+</main>
+</div>
+<div class="admin-toast" id="adminToast"></div>
+<script src="js/config.js"></script>
+<script src="js/supabase.min.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

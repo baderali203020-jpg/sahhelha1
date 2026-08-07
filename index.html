@@ -6,13 +6,15 @@
 <title>سَهِّلها</title>
 
 <!-- 🔐 طبقات الأمان -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self';">
-<meta http-equiv="X-Frame-Options" content="DENY">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://*.supabase.co; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
-<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+<meta name="description" content="سَهِّلها — مساعد دراسي ذكي لطلاب المرحلة الثانوية في السعودية">
+<meta name="theme-color" content="#2E7D4F">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/cloud.css">
 
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -264,7 +266,48 @@ img{-webkit-user-drag:none;user-drag:none}
 </head>
 <body>
 
-<div class="secure-badge">🔒 محمي</div>
+<div class="cloud-gate" id="cloudGate" aria-live="polite">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo">🎓</div>
+      <h1>سَهِّلها</h1>
+      <p>حساب واحد، ومذاكرتك محفوظة على جميع أجهزتك</p>
+    </div>
+    <div id="authUi">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab on" type="button" data-mode="login">تسجيل الدخول</button>
+        <button class="auth-tab" type="button" data-mode="signup">حساب جديد</button>
+      </div>
+      <form id="authForm" novalidate>
+        <div class="auth-field" id="authNameField" hidden>
+          <label for="authName">الاسم</label>
+          <input id="authName" type="text" maxlength="30" autocomplete="name" placeholder="اسم الطالب">
+        </div>
+        <div class="auth-field">
+          <label for="authEmail">البريد الإلكتروني</label>
+          <input id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required>
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">كلمة المرور</label>
+          <input id="authPassword" type="password" minlength="8" maxlength="72" autocomplete="current-password" placeholder="8 أحرف على الأقل" required>
+        </div>
+        <button class="auth-primary" id="authSubmit" type="submit">تسجيل الدخول</button>
+        <button class="auth-secondary" id="forgotPassword" type="button">نسيت كلمة المرور؟</button>
+      </form>
+      <div class="auth-divider" id="authDivider" hidden>أو</div>
+      <button class="auth-google" id="googleLogin" type="button" hidden><span>G</span><span>المتابعة بحساب Google</span></button>
+      <button class="auth-secondary" id="localMode" type="button" hidden>المتابعة محليًا دون حساب</button>
+    </div>
+    <div id="setupUi" hidden>
+      <div class="security-info"><div class="s-ico">⚙️</div><div class="s-txt"><b>بقي ربط قاعدة البيانات</b><br>نفّذ ملف schema.sql ثم أدخل الرابط والمفتاح العام في config.js.</div></div>
+      <div class="setup-code">js/config.js<br>SUPABASE_URL<br>SUPABASE_ANON_KEY</div>
+    </div>
+    <div class="auth-status" id="authStatus"></div>
+    <p class="auth-foot">بالمتابعة أنت توافق على سياسة الخصوصية. لا تضع معلومات شديدة الحساسية في الملاحظات أو محادثات الذكاء الاصطناعي.</p>
+  </div>
+</div>
+
+<div class="secure-badge">☁️ حفظ سحابي</div>
 
 <div class="ob" id="ob">
 <div class="ob-card">
@@ -297,7 +340,10 @@ img{-webkit-user-drag:none;user-drag:none}
 <div class="greet"><span id="greetTime">مساء الخير</span> ✨</div>
 <div class="name" id="dN">محمد</div>
 </div>
-<div class="hdr-badge">🎓 الفصل الثاني</div>
+<div class="hdr-actions">
+<div class="sync-pill syncing" id="syncStatus" title="حالة المزامنة"><span class="sync-dot"></span><span id="syncText">جارٍ الاتصال</span></div>
+<button class="cloud-icon-btn" type="button" onclick="SahhelhaCloud.openAccount()" aria-label="الحساب">👤</button>
+</div>
 </div>
 <div class="hdr-stats">
 <div class="hst"><div class="val" id="stC">0</div><div class="lbl">حصص اليوم</div></div>
@@ -327,6 +373,8 @@ img{-webkit-user-drag:none;user-drag:none}
 <div class="fc" onclick="oP('flash')"><div class="fc-new">جديد</div><div class="fc-ico">🃏</div><div class="fc-title">بطاقات الحفظ</div><div class="fc-desc">Flashcards</div></div>
 <div class="fc" onclick="oP('research')"><div class="fc-ico">📝</div><div class="fc-title">كتابة بحث</div><div class="fc-desc">احترافي</div></div>
 <div class="fc" onclick="oP('exams')"><div class="fc-new">جديد</div><div class="fc-ico">📅</div><div class="fc-title">جدول الاختبارات</div><div class="fc-desc">مواعيدك</div></div>
+<div class="fc" onclick="oP('reminders')"><div class="fc-new">جديد</div><div class="fc-ico">🔔</div><div class="fc-title">التذكيرات</div><div class="fc-desc">إشعارات ذكية</div></div>
+<div class="fc admin-only" id="adminCard" onclick="location.href='admin.html'"><div class="fc-ico">🛠️</div><div class="fc-title">لوحة الإدارة</div><div class="fc-desc">إدارة المحتوى</div></div>
 </div>
 
 <div class="sec-h"><h3>الأدوات</h3></div>
@@ -342,7 +390,7 @@ img{-webkit-user-drag:none;user-drag:none}
 <div class="footer">
 <p>سَهِّلها © 2026 - جميع الحقوق محفوظة</p>
 <p style="margin-top:4px"><span>♥</span> صُنع بحب لطلابنا</p>
-<p style="margin-top:4px;font-size:.7rem">🔒 محمي بأحدث تقنيات الأمان</p>
+<p style="margin-top:4px;font-size:.7rem">🔐 خصوصية واضحة وحفظ آمن للحساب</p>
 </div>
 </div>
 </div>
@@ -356,10 +404,10 @@ img{-webkit-user-drag:none;user-drag:none}
 </div>
 
 <div class="ip" id="ipChat">
-<div class="ip-h"><button class="bb" onclick="cP('ipChat')">→</button><h2>🤖 المساعد الذكي</h2></div>
+<div class="ip-h"><button class="bb" onclick="cP('ipChat')">→</button><h2 style="flex:1">🤖 المساعد الذكي</h2><select id="aiProvider" aria-label="مزود الذكاء الاصطناعي" style="max-width:105px;border:1px solid var(--brd);border-radius:9px;padding:6px;font-family:inherit"><option value="auto">تلقائي</option><option value="gemini">Gemini</option><option value="openai">OpenAI</option></select></div>
 <div class="chat-w">
 <div class="chat-m" id="cMs">
-<div class="cm bot"><div class="mh">🤖 سَهِّلها</div>أهلاً! أنا مساعدك الدراسي 🎓<br>🔒 محادثاتنا آمنة ومشفرة<br><br>اسأل أي سؤال! 😊</div>
+<div class="cm bot"><div class="mh">🤖 سَهِّلها</div>أهلاً! أنا مساعدك الدراسي 🎓<br>🔐 مفتاح الذكاء الاصطناعي محفوظ في الخادم<br>قد تُرسل رسالتك إلى مزود الذكاء الاصطناعي للإجابة.<br><br>اسأل أي سؤال! 😊</div>
 </div>
 <div class="chat-i"><input type="text" id="cIn" placeholder="اكتب سؤالك..." maxlength="500" onkeypress="if(event.key==='Enter')sndM()"><button onclick="sndM()">📤</button></div>
 </div>
@@ -504,6 +552,7 @@ img{-webkit-user-drag:none;user-drag:none}
 <input type="text" id="exSub" maxlength="50" placeholder="المادة...">
 <input type="date" id="exDate">
 <input type="text" id="exNote" maxlength="100" placeholder="ملاحظة...">
+<label class="inline-check"><input type="checkbox" id="exNotify" checked> ذكّرني قبل الاختبار بيوم</label>
 <button class="btn" onclick="addExam()">+ إضافة</button>
 </div>
 <div id="exList"></div>
@@ -620,61 +669,72 @@ img{-webkit-user-drag:none;user-drag:none}
 </div>
 </div>
 
+
+<div class="ip" id="ipReminders">
+  <div class="ip-h"><button class="bb" onclick="cP('ipReminders')">→</button><h2>🔔 التذكيرات</h2></div>
+  <div class="ip-b">
+    <div class="permission-box" id="notificationPermission"><div class="pi">🔔</div><p><b>فعّل الإشعارات</b><br>حتى نذكّرك بالمهام والاختبارات في وقتها.</p><button id="enableNotificationsBtn" type="button">تفعيل</button></div>
+    <div class="reminder-form">
+      <label for="reminderTitle">عنوان التذكير</label>
+      <input id="reminderTitle" maxlength="100" placeholder="مثال: مراجعة الرياضيات">
+      <div class="reminder-grid">
+        <div><label for="reminderDate">التاريخ</label><input id="reminderDate" type="date"></div>
+        <div><label for="reminderTime">الوقت</label><input id="reminderTime" type="time"></div>
+      </div>
+      <label for="reminderBody">ملاحظة اختيارية</label>
+      <input id="reminderBody" maxlength="300" placeholder="الفصل أو الدرس المطلوب">
+      <button class="btn" id="saveReminderBtn" type="button" style="margin-top:12px">حفظ التذكير</button>
+    </div>
+    <div id="remindersList"><div class="reminder-empty">لا توجد تذكيرات</div></div>
+  </div>
+</div>
+
+<div class="ip" id="ipAccount">
+  <div class="ip-h"><button class="bb" onclick="cP('ipAccount')">→</button><h2>👤 الحساب</h2></div>
+  <div class="ip-b">
+    <div class="account-card"><div class="account-row"><div class="account-avatar" id="accountAvatar">ط</div><div class="account-meta"><h3 id="accountName">طالب</h3><p id="accountEmail"></p><span class="role-chip" id="accountRole">طالب</span></div></div></div>
+    <div class="cloud-setting"><h4>☁️ المزامنة ال�ية</h4><p>تُحفظ المهام والملاحظات والجدول والاختبارات في حسابك مع نسخة محلية للعمل عند ضعف الاتصال.</p></div>
+    <div class="cloud-setting"><h4>📲 تثبيت التطبيق</h4><p>ثبّت سَهِّلها على الشاشة الرئيسية للحصول على تجربة أفضل والإشعارات.</p><button class="btn muted-btn" id="installAppBtn" type="button" style="margin-top:10px" hidden>تثبيت التطبيق</button><div class="install-tip">على iPhone: زر المشاركة ← إضافة إلى الشاشة الرئيسية.</div></div>
+    <div class="cloud-actions">
+      <button class="btn admin-only" type="button" onclick="location.href='admin.html'">🛠️ فتح لوحة الإدارة</button>
+      <button class="btn muted-btn" type="button" onclick="exportData()">📥 تصدير بياناتي</button>
+      <button class="btn muted-btn" id="logoutBtn" type="button">تسجيل الخروج</button>
+      <button class="btn danger-btn" id="deleteAccountBtn" type="button">حذف الحساب نهائيًا</button>
+    </div>
+  </div>
+</div>
+
 <div class="ip" id="ipPrivacy">
 <div class="ip-h"><button class="bb" onclick="cP('ipPrivacy')">→</button><h2>🔐 الأمان والخصوصية</h2></div>
 <div class="ip-b">
-
-<div class="security-info">
-<div class="s-ico">🛡️</div>
-<div class="s-txt"><b>تطبيقك محمي بأحدث تقنيات الأمان العالمية</b><br>جميع بياناتك مشفرة ومحفوظة على جهازك فقط</div>
-</div>
-
-<div class="sec-h"><h3>🔒 طبقات الحماية المفعّلة</h3></div>
+<div class="security-info"><div class="s-ico">🛡️</div><div class="s-txt"><b>حماية عملية دون وعود مطلقة</b><br>نستخدم تسجيل دخول وصلاحيات قاعدة بيانات واتصال HTTPS، ولا نزعم أن أي نظام غير قابل للاختراق.</div></div>
+<div class="sec-h"><h3>📦 البيانات التي نحفظها</h3></div>
 <div class="cblk">
-<div class="cblk-item">✅ تشفير كامل للبيانات المحفوظة (Encrypted Storage)</div>
-<div class="cblk-item">✅ حماية من حقن السكريبتات (XSS Protection)</div>
-<div class="cblk-item">✅ حماية من السرقة عبر iframe (Clickjacking Protection)</div>
-<div class="cblk-item">✅ سياسة أمان المحتوى (Content Security Policy)</div>
-<div class="cblk-item">✅ الحماية من هجمات SQL Injection</div>
-<div class="cblk-item">✅ اتصال HTTPS إجباري ومشفر</div>
-<div class="cblk-item">✅ حماية من DDoS و Rate Limiting</div>
-<div class="cblk-item">✅ تنظيف جميع المدخلات تلقائياً</div>
-<div class="cblk-item">✅ منع الوصول لأدوات المطور</div>
-<div class="cblk-item">✅ حماية من التلاعب بالكود (Anti-Tampering)</div>
-<div class="cblk-item">✅ انتهاء الجلسة تلقائياً (30 دقيقة)</div>
-<div class="cblk-item">✅ فحص محتوى اللصق من الحافظة</div>
+<div class="cblk-item">• البريد الإلكتروني والاسم والصف الدراسي لإنشاء الحساب.</div>
+<div class="cblk-item">• المهام والملاحظات والجدول والاختبارات والتذكيرات التي تدخلها.</div>
+<div class="cblk-item">• بيانات تقنية محدودة لازمة للمزامنة والإشعارات ومنع إساءة الاستخدام.</div>
+<div class="cblk-item">• نسخة محلية على جهازك ونسخة سحابية في Supabase عند تسجيل الدخول.</div>
 </div>
-
-<div class="sec-h"><h3>📊 معلومات الأمان</h3></div>
+<div class="sec-h"><h3>🤖 المساعد الذكي</h3></div>
 <div class="cblk">
-<div class="cblk-item">🔐 <b>مستوى التشفير:</b> AES + Base64</div>
-<div class="cblk-item">🌐 <b>البروتوكول:</b> HTTPS مع TLS 1.3</div>
-<div class="cblk-item">💾 <b>مكان التخزين:</b> جهازك فقط (لا سحابة)</div>
-<div class="cblk-item">👁️ <b>الخصوصية:</b> لا نجمع أي بيانات</div>
-<div class="cblk-item">🚫 <b>الإعلانات:</b> لا يوجد أي إعلانات</div>
-<div class="cblk-item">🔓 <b>الأذونات:</b> لا نطلب أي أذونات</div>
+<div class="cblk-item">قد تُرسل أسئلتك إلى Gemini أو OpenAI لإنتاج الإجابة وفق المزود المختار.</div>
+<div class="cblk-item">لا تكتب رقم الهوية أو كلمات المرور أو معلومات صحية أو مالية في المحادثة.</div>
+<div class="cblk-item">قد يخطئ الذكاء الاصطناعي؛ راجع إجابات المسائل المهمة ومصادر المنهج.</div>
 </div>
-
-<div class="sec-h"><h3>🛡️ نصائح للأمان</h3></div>
+<div class="sec-h"><h3>🔒 وسائل الحماية</h3></div>
 <div class="cblk">
-<div class="cblk-item">🔐 لا تشارك معلوماتك مع أحد</div>
-<div class="cblk-item">📱 استخدم قفل شاشة على جهازك</div>
-<div class="cblk-item">🌐 استخدم شبكات Wi-Fi موثوقة</div>
-<div class="cblk-item">🔄 احتفظ بنسخة احتياطية من ملاحظاتك المهمة</div>
-<div class="cblk-item">🚫 لا تلصق أي كود مشبوه في المتصفح</div>
+<div class="cblk-item">✅ مفاتيح الذكاء الاصطناعي محفوظة في وظائف الخادم وليست في المتصفح.</div>
+<div class="cblk-item">✅ سياسات Row Level Security تفصل بيانات كل مستخدم.</div>
+<div class="cblk-item">✅ اتصال HTTPS، جلسات مصادقة، وحدود لاستخدام المساعد.</div>
+<div class="cblk-item">✅ إمكانية تصدير البيانات أو حذف الحساب والبيانات المرتبطة به.</div>
 </div>
-
-<div class="sec-h"><h3>❓ الأسئلة الشائعة</h3></div>
-<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل بياناتي آمنة؟</span><span class="fa">▼</span></div><div class="fq-a">نعم! جميع بياناتك مشفرة ومحفوظة على جهازك فقط. لا نرسل أي شيء لأي خادم خارجي.</div></div>
-<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل يمكن أن يخترق أحد التطبيق؟</span><span class="fa">▼</span></div><div class="fq-a">التطبيق محمي بـ 12 طبقة أمان عالمية. حتى لو حاول أحد، لن يستطيع الوصول لبياناتك.</div></div>
-<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل تجمعون معلومات عني؟</span><span class="fa">▼</span></div><div class="fq-a">لا نجمع أي بيانات على الإطلاق. كل شيء يبقى على جهازك.</div></div>
-<div class="fq"><div class="fq-q" onclick="tF(this)"><span>ماذا يحدث لبياناتي عند حذف التطبيق؟</span><span class="fa">▼</span></div><div class="fq-a">تُحذف جميع البيانات نهائياً من جهازك ولا يمكن استرجاعها.</div></div>
-
-<div style="margin-top:20px;display:flex;gap:8px">
-<button class="btn btn-out" onclick="exportData()">📥 تصدير بياناتي</button>
-<button class="btn btn-r" onclick="resetApp()">🗑️ حذف الكل</button>
-</div>
-
+<div class="sec-h"><h3>👨‍👩‍👧 الطلاب القُصّر</h3></div>
+<div class="cblk"><div class="cblk-item">إذا كان المستخدم قاصرًا، فينبغي الحصول على موافقة ولي الأمر والالتزام بالأنظمة والسياسة المنشورة قبل الإطلاق العام.</div></div>
+<div class="sec-h"><h3>❓ أسئلة شائعة</h3></div>
+<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل تُباع بياناتي أو تُستخدم للإعلانات؟</span><span class="fa">▼</span></div><div class="fq-a">لا توجد إعلانات داخل التطبيق، ولا نصمم النظام لبيع بيانات الطلاب.</div></div>
+<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل أستطيع حذف حسابي؟</span><span class="fa">▼</span></div><div class="fq-a">نعم، من صفحة الحساب اختر «حذف الحساب نهائيًا». لا يمكن التراجع عن العملية.</div></div>
+<div class="fq"><div class="fq-q" onclick="tF(this)"><span>هل Base64 تشفير؟</span><span class="fa">▼</span></div><div class="fq-a">لا. التخزين المحلي يستخدم ترميزًا بسيطًا للتوافق فقط؛ الحماية الفعلية تعتمد على صلاحيات الحساب وقاعدة البيانات وHTTPS.</div></div>
+<div style="margin-top:20px"><button class="btn btn-out" onclick="exportData()">📥 تصدير بياناتي</button></div>
 </div>
 </div>
 
@@ -685,24 +745,7 @@ img{-webkit-user-drag:none;user-drag:none}
 
 // ============ 🔐 نظام الحماية الشامل ============
 
-// 1. حماية من DevTools
-(function(){
-  console.log('%c⚠️ توقف!','color:red;font-size:60px;font-weight:bold');
-  console.log('%cهذه الميزة للمطورين فقط','color:red;font-size:16px');
-  console.log('%cلا تلصق أي كود هنا - قد يسرق بياناتك','color:red;font-size:16px');
-  
-  document.addEventListener('keydown',function(e){
-    if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='J'||e.key==='C'))||(e.ctrlKey&&e.key==='U')){
-      e.preventDefault();
-      return false;
-    }
-  });
-  
-  document.addEventListener('contextmenu',function(e){
-    e.preventDefault();
-    return false;
-  });
-})();
+// 1. واجهة توعوية — الحماية الحقيقية في الخادم وسياسات الصلاحيات
 
 // 2. تنظيف المدخلات
 const Security={
@@ -720,7 +763,7 @@ const Security={
   }
 };
 
-// 3. التخزين الآمن المشفر
+// 3. ذاكرة محلية مساعدة (Base64 ترميز وليس تشفيرًا)
 const SecureStorage={
   _key:'SH_'+navigator.userAgent.length,
   _enc:function(t){try{return btoa(encodeURIComponent(t))}catch(e){return t}},
@@ -763,41 +806,10 @@ const RateLimit={
   }
 };
 
-// 5. حماية Session
-const Session={
-  _timeout:30*60*1000,
-  _last:Date.now(),
-  _timer:null,
-  init:function(){
-    const self=this;
-    ['click','keypress','scroll','touchstart'].forEach(function(evt){
-      document.addEventListener(evt,function(){self._last=Date.now()},{passive:true});
-    });
-    this._timer=setInterval(function(){
-      if(Date.now()-self._last>self._timeout){
-        if(confirm('انتهت جلستك. هل تريد الاستمرار؟')){self._last=Date.now()}
-      }
-    },60000);
-  }
-};
+// 5. الجلسة تُدار عبر Supabase Auth مع تجديد آمن للرمز.
+const Session={init:function(){return true}};
 
-// 6. حماية اللصق
-document.addEventListener('paste',function(e){
-  const text=(e.clipboardData||window.clipboardData).getData('text');
-  if(/<script|javascript:|onerror=|onclick=/i.test(text)){
-    e.preventDefault();
-    alert('⚠️ محتوى غير آمن! تم منع اللصق.');
-  }
-});
-
-// 7. DDoS Protection
-let clickCount=0,resetTime=Date.now();
-document.addEventListener('click',function(){
-  clickCount++;
-  const now=Date.now();
-  if(now-resetTime>1000){clickCount=0;resetTime=now}
-  if(clickCount>30){alert('🚫 نشاط مشبوه!');clickCount=0}
-});
+// 6-7. منع إساءة الاستخدام الفعلي يتم في الخادم، وليس بمنع أدوات المتصفح.
 
 // 8. HTTPS Redirect
 if(location.protocol==='http:'&&location.hostname!=='localhost'&&location.hostname!=='127.0.0.1'){
@@ -834,11 +846,10 @@ function exportData(){
 // Session Init
 Session.init();
 
-console.log('%c✅ التطبيق محمي بالكامل','color:green;font-size:20px;font-weight:bold');
-console.log('%c🔒 12 طبقة أمان مفعّلة','color:blue;font-size:14px');
+console.log('%cسَهِّلها — استخدم أدوات المطور بمسؤولية','color:#2E7D4F;font-size:16px;font-weight:bold');
 
 // ============ 📚 بيانات التطبيق ============
-const subs=[
+let subs=[
 {id:'q1s1',name:'الدراسات الإسلامية 1',icon:'🕌',grade:'1high',gl:'أول ثانوي',sem:'s1',semLabel:'الفصل الأول',units:[{name:'التوحيد',lessons:['الوحي وأهميته','النبوة والرسالة']},{name:'الحديث',lessons:['الإسلام والإيمان','مراتب الدين']},{name:'الفقه',lessons:['الطهارة','الوضوء','الغسل']}]},
 {id:'ar1s1',name:'الكفايات اللغوية 1',icon:'📝',grade:'1high',gl:'أول ثانوي',sem:'s1',semLabel:'الفصل الأول',units:[{name:'القرائية',lessons:['استراتيجيات القراءة','النصوص الأدبية']},{name:'الكتابية',lessons:['علامات الترقيم','الرسم الإملائي']},{name:'النحوية',lessons:['الإعراب','المرفوعات']}]},
 {id:'en1s1',name:'Mega Goal 1',icon:'🌐',grade:'1high',gl:'أول ثانوي',sem:'s1',semLabel:'الفصل الأول',units:[{name:'Welcome',lessons:['Greetings','Present Simple']},{name:'Places',lessons:['Countries','There is/are']}]},
@@ -882,7 +893,7 @@ const subs=[
 {id:'chem3s2',name:'الكيمياء 6',icon:'🧪',grade:'3high',gl:'ثالث ثانوي',sem:'s2',semLabel:'الفصل الثاني',units:[{name:'العضوية',lessons:['الهيدروكربونات']},{name:'الحيوية',lessons:['الكربوهيدرات','البروتينات']}]}
 ];
 
-const quizBank={
+let quizBank={
 math:[{q:'مشتقة 3x²؟',opts:['6x','3x','6x²','9x'],correct:0,explain:'6x'},{q:'∫2x dx؟',opts:['x²+C','2x²','x+C','2x+C'],correct:0,explain:'x²+C'},{q:'احتمال زوجي في النرد؟',opts:['1/2','1/3','1/6','2/3'],correct:0,explain:'3/6=1/2'},{q:'C(5,2)؟',opts:['10','20','5','15'],correct:0,explain:'10'},{q:'مشتقة sin(x)؟',opts:['cos(x)','-cos(x)','sin(x)','-sin(x)'],correct:0,explain:'cos(x)'},{q:'log(1000)؟',opts:['3','2','10','100'],correct:0,explain:'3'},{q:'حل 2x+4=10؟',opts:['3','5','2','6'],correct:0,explain:'x=3'},{q:'ميل y=3x+5؟',opts:['3','5','-3','2'],correct:0,explain:'3'},{q:'∫cos(x)؟',opts:['sin+C','-sin+C','cos+C','-cos+C'],correct:0,explain:'sin+C'},{q:'P(3,2)؟',opts:['6','3','9','2'],correct:0,explain:'6'}],
 physics:[{q:'V=IR قانون؟',opts:['أوم','نيوتن','كولوم','فاراداي'],correct:0,explain:'أوم'},{q:'وحدة التيار؟',opts:['أمبير','فولت','أوم','واط'],correct:0,explain:'أمبير'},{q:'V=12,R=4,I=؟',opts:['3A','48','8','16'],correct:0,explain:'3A'},{q:'المقاومة في التوالي؟',opts:['مجموع','معكوس','أكبر','أصغر'],correct:0,explain:'مجموع'},{q:'وحدة المقاومة؟',opts:['أوم','فولت','أمبير','واط'],correct:0,explain:'أوم'},{q:'القوة=؟',opts:['كتلة×تسارع','كتلة×سرعة','كتلة/زمن','كتلة×زمن'],correct:0,explain:'F=ma'},{q:'وحدة القوة؟',opts:['نيوتن','جول','واط','باسكال'],correct:0,explain:'نيوتن'},{q:'التسارع الأرضي؟',opts:['9.8 م/ث²','10 كم/ث','9.8 كم/س','5 م/ث'],correct:0,explain:'9.8'},{q:'الطاقة الحركية؟',opts:['½mv²','mv','mgh','ma'],correct:0,explain:'½mv²'},{q:'وحدة الطاقة؟',opts:['جول','نيوتن','واط','أمبير'],correct:0,explain:'جول'}],
 chem:[{q:'أصغر وحدة للمادة؟',opts:['الذرة','الجزيء','الخلية','الإلكترون'],correct:0,explain:'الذرة'},{q:'رابطة مشاركة الإلكترونات؟',opts:['تساهمية','أيونية','فلزية','هيدروجينية'],correct:0,explain:'تساهمية'},{q:'صيغة الماء؟',opts:['H₂O','CO₂','NaCl','H₂SO₄'],correct:0,explain:'H₂O'},{q:'مجموعة OH؟',opts:['هيدروكسيل','كربونيل','أمين','كربوكسيل'],correct:0,explain:'هيدروكسيل'},{q:'غاز نبيل؟',opts:['النيون','الصوديوم','الكلور','الحديد'],correct:0,explain:'النيون'},{q:'pH الحمض؟',opts:['أقل من 7','7','أكثر من 7','14'],correct:0,explain:'<7'},{q:'رمز الذهب؟',opts:['Au','Ag','Fe','Cu'],correct:0,explain:'Au'},{q:'الأكسجين رقمه الذري؟',opts:['8','16','6','12'],correct:0,explain:'8'},{q:'كم إلكترون في المستوى الأول؟',opts:['2','8','18','32'],correct:0,explain:'2'},{q:'pH القاعدة؟',opts:['>7','7','<7','0'],correct:0,explain:'>7'}],
@@ -892,7 +903,7 @@ islam:[{q:'أركان الإسلام؟',opts:['5','4','6','7'],correct:0,explain
 arabic:[{q:'نوع "كتاب"؟',opts:['اسم','فعل','حرف','صفة'],correct:0,explain:'اسم'},{q:'إعراب الفاعل؟',opts:['مرفوع','منصوب','مجرور','مجزوم'],correct:0,explain:'مرفوع'},{q:'نوع "يكتب الطالب"؟',opts:['فعلية','اسمية','شرطية','استفهامية'],correct:0,explain:'فعلية'},{q:'جمع "قلم"؟',opts:['أقلام','قلمان','قلوم','قلامة'],correct:0,explain:'أقلام'},{q:'إعراب "طالب" في "محمد طالب"؟',opts:['خبر','فاعل','مبتدأ','مفعول'],correct:0,explain:'خبر'},{q:'"في المدرسة" إعراب المدرسة؟',opts:['مجرور','فاعل','مفعول','مبتدأ'],correct:0,explain:'مجرور'},{q:'شاعر جاهلي؟',opts:['امرؤ القيس','المتنبي','شوقي','نزار'],correct:0,explain:'امرؤ القيس'},{q:'نوع "ركض"؟',opts:['ماضٍ','مضارع','أمر','ناقص'],correct:0,explain:'ماضٍ'},{q:'نوع "يذاكر"؟',opts:['مضارع','ماضٍ','أمر','مجهول'],correct:0,explain:'مضارع'},{q:'حروف الجر؟',opts:['20','10','15','25'],correct:0,explain:'حوالي 20'}]
 };
 
-const flashcards={
+let flashcards={
 science:[{q:'الميتوكوندريا؟',a:'محطة طاقة الخلية'},{q:'DNA؟',a:'حمض نووي يحمل الوراثة'},{q:'قانون أوم؟',a:'V = I × R'},{q:'التساهمية؟',a:'مشاركة الإلكترونات'},{q:'ATP؟',a:'عملة الطاقة'},{q:'الكروموسوم؟',a:'يحمل DNA'},{q:'قوانين نيوتن؟',a:'القصور، F=ma، الفعل ورد الفعل'},{q:'الأنزيمات؟',a:'بروتينات تسرّع التفاعلات'}],
 english:[{q:'Consequently?',a:'بالتالي'},{q:'Present Perfect?',a:'have/has + past participle'},{q:'Passive Voice?',a:'be + past participle'},{q:'affect vs effect?',a:'فعل | اسم'},{q:'Comparative?',a:'-er أو more'},{q:'Modal Verbs?',a:'can, must, should'},{q:'Idiom?',a:'تعبير اصطلاحي'},{q:'Synonym?',a:'مرادف'}],
 islam:[{q:'أركان الإسلام؟',a:'الشهادتان، الصلاة، الزكاة، الصوم، الحج'},{q:'أركان الإيمان؟',a:'6: بالله، ملائكته، كتبه، رسله، اليوم الآخر، القدر'},{q:'أنواع التوحيد؟',a:'الربوبية، الألوهية، الأسماء والصفات'},{q:'مصادر التشريع؟',a:'القرآن، السنة، الإجماع، القياس'},{q:'شروط الصلاة؟',a:'الطهارة، الستر، القبلة، النية، الوقت'},{q:'أول غزوة؟',a:'بدر 17 رمضان 2هـ'},{q:'الخلفاء الراشدون؟',a:'أبو بكر، عمر، عثمان، علي'},{q:'خاتم النبيين؟',a:'محمد ﷺ'}],
@@ -918,6 +929,7 @@ let sch=SecureStorage.get('sch',{})||{};
 let exams=SecureStorage.get('exams',[])||[];
 let nC='#2E7D4F',pInt=null,pSec=1500,pRun=false,cDay=0,originalSec=1500;
 let curQuiz=[],qIdx=0,qScore=0;
+let chatHistory=[];
 let fcType='science',fcIdx=0,fcFlipped=false;
 
 const nIn=document.getElementById('sN');
@@ -948,6 +960,7 @@ function finOB(){
   if(!n||!g)return;
   SecureStorage.set('na',n);
   SecureStorage.set('gr',g);
+  if(window.SahhelhaCloud)window.SahhelhaCloud.completeOnboarding(n,g);
   document.getElementById('dN').textContent=n;
   document.getElementById('ob').classList.add('bye');
   setTimeout(function(){
@@ -971,9 +984,8 @@ function chkU(){
 }
 
 function resetApp(){
-  if(confirm('⚠️ سيتم حذف جميع بياناتك نهائياً!\nهل أنت متأكد؟')){
+  if(confirm('سيتم مسح النسخة المحلية من بيانات التطبيق على هذا الجهاز. ستعود البيانات السحابية بعد تسجيل الدخول. هل تريد المتابعة؟')){
     SecureStorage.clear();
-    localStorage.clear();
     location.reload();
   }
 }
@@ -988,7 +1000,7 @@ function swT(t){
   if(t==='home'){document.getElementById('nH').classList.add('on');window.scrollTo(0,0)}
 }
 
-const pm={chat:'ipChat',lib:'ipLib',quiz:'ipQuiz',plan:'ipPlan',tracker:'ipTracker',flash:'ipFlash',exams:'ipExams',achieve:'ipAchieve',tasks:'ipTasks',research:'ipResearch',gpa:'ipGpa',pomo:'ipPomo',notes:'ipNotes',sch:'ipSch',cal:'ipCal',privacy:'ipPrivacy',sd:'ipSD'};
+const pm={chat:'ipChat',lib:'ipLib',quiz:'ipQuiz',plan:'ipPlan',tracker:'ipTracker',flash:'ipFlash',exams:'ipExams',achieve:'ipAchieve',tasks:'ipTasks',research:'ipResearch',gpa:'ipGpa',pomo:'ipPomo',notes:'ipNotes',sch:'ipSch',cal:'ipCal',privacy:'ipPrivacy',sd:'ipSD',reminders:'ipReminders',account:'ipAccount'};
 
 function oP(p){
   const e=document.getElementById(pm[p]);
@@ -1002,6 +1014,8 @@ function oP(p){
     if(p==='achieve')rAch();
     if(p==='flash')loadFC('science');
     if(p==='pomo')loadPomoStats();
+    if(p==='reminders'&&window.SahhelhaCloud){window.SahhelhaCloud.listReminders();}
+    if(p==='account'&&window.SahhelhaCloud){/* تُحدّث بيانات الحساب من طبقة السحابة */}
   }
 }
 
@@ -1030,26 +1044,48 @@ function oSD(id){
   s.units.forEach(function(u){
     h+='<div class="cblk"><h3>'+u.name+'</h3>'+u.lessons.map(function(l,i){return '<div class="cblk-item">📌 '+(i+1)+'. '+l+'</div>'}).join('')+'</div>';
   });
+  const resources=(window.SahhelhaResources||[]).filter(function(r){return r.subject_id===s.dbId||r.subject_code===s.id});
+  if(resources.length){
+    h+='<div class="sec-h"><h3>📎 الموارد</h3></div><div class="resource-list">'+resources.map(function(r){
+      const url=/^https?:\/\//i.test(r.public_url||r.external_url||'')?(r.public_url||r.external_url):'#';
+      return '<a class="resource-link" href="'+url.replace(/"/g,'%22')+'" target="_blank" rel="noopener"><span class="ri">📄</span><span class="rt"><h5>'+Security.sanitize(r.title||'ملف')+'</h5><p>'+Security.sanitize(r.description||'فتح المورد')+'</p></span></a>';
+    }).join('')+'</div>';
+  }
   document.getElementById('sdB').innerHTML=h;
   oP('sd');
 }
 
-function sndM(){
+async function sndM(){
   if(!RateLimit.check('chat',20))return toast('انتظر قليلاً');
   const inp=document.getElementById('cIn');
-  const msg=Security.sanitize(Security.limit(inp.value.trim(),500));
-  if(!msg)return;
+  const raw=Security.limit(inp.value.trim(),1500);
+  if(!raw)return;
   const ms=document.getElementById('cMs');
-  ms.innerHTML+='<div class="cm user">'+msg+'</div>';
-  inp.value='';
-  ms.innerHTML+='<div class="cm bot" id="typ"><div class="mh">🤖 سَهِّلها</div><div class="typing"><span></span><span></span><span></span></div></div>';
-  ms.scrollTop=ms.scrollHeight;
-  setTimeout(function(){
-    const t=document.getElementById('typ');
-    if(t)t.remove();
-    ms.innerHTML+='<div class="cm bot"><div class="mh">🤖 سَهِّلها</div>'+genAI(msg)+'</div>';
-    ms.scrollTop=ms.scrollHeight;
-  },800);
+  const userBubble=document.createElement('div');
+  userBubble.className='cm user';userBubble.textContent=raw;ms.appendChild(userBubble);
+  inp.value='';inp.disabled=true;
+  const typing=document.createElement('div');typing.className='cm bot';typing.id='typ';
+  typing.innerHTML='<div class="mh">🤖 سَهِّلها</div><div class="typing"><span></span><span></span><span></span></div>';
+  ms.appendChild(typing);ms.scrollTop=ms.scrollHeight;
+  try{
+    let answer,provider='محلي';
+    if(window.SahhelhaCloud&&window.SahhelhaCloud.ready){
+      const result=await window.SahhelhaCloud.askAI(raw,chatHistory);
+      answer=result.answer;provider=result.provider;
+    }else answer=genAI(raw).replace(/<[^>]+>/g,'');
+    chatHistory.push({role:'user',content:raw},{role:'assistant',content:answer});
+    chatHistory=chatHistory.slice(-16);
+    typing.remove();
+    const bot=document.createElement('div');bot.className='cm bot';
+    const head=document.createElement('div');head.className='mh';head.textContent='🤖 سَهِّلها';
+    const body=document.createElement('div');body.className='ai-answer';body.textContent=answer;
+    const meta=document.createElement('span');meta.className='ai-provider';meta.textContent='المزود: '+provider;
+    bot.append(head,body,meta);ms.appendChild(bot);
+  }catch(error){
+    typing.remove();
+    const bot=document.createElement('div');bot.className='cm bot chat-error';
+    bot.textContent='تعذر الحصول على الإجابة: '+(error.message||'حاول لاحقاً');ms.appendChild(bot);
+  }finally{inp.disabled=false;inp.focus();ms.scrollTop=ms.scrollHeight;}
 }
 
 function genAI(q){
@@ -1176,6 +1212,7 @@ function addExam(){
   document.getElementById('exDate').value='';
   document.getElementById('exNote').value='';
   rEx();updStE();toast('تم! 📅');
+  if(document.getElementById('exNotify')?.checked&&window.SahhelhaCloud)window.SahhelhaCloud.createExamReminder(s,d);
 }
 
 function rEx(){
@@ -1403,7 +1440,12 @@ function playS(){
   }catch(e){}
 }
 
-chkU();rT();uCC();updStE();updTodayList();
+// يبدأ عرض التطبيق بعد التحقق من الحساب في js/cloud.js
+rT();uCC();updStE();updTodayList();
 </script>
+<script src="js/config.js"></script>
+<script src="js/supabase.min.js"></script>
+<script src="js/cloud.js"></script>
+<noscript><div style="position:fixed;inset:0;z-index:50000;background:#fff;padding:40px;text-align:center">يحتاج سَهِّلها إلى JavaScript للعمل.</div></noscript>
 </body>
 </html>
