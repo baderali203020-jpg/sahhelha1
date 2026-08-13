@@ -1,7 +1,7 @@
 /* Service Worker — سَهِّلها */
 'use strict';
 
-const CACHE_VERSION = 'sahhilha-v2-2026-08-07';
+const CACHE_VERSION = 'sahhilha-v3-visitors-2026-08-07';
 const APP_SHELL = [
   './',
   './index.html',

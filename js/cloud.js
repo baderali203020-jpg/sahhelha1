@@ -22,8 +22,77 @@
   let realtimeChannel = null;
   let installPrompt = null;
   let authMode = 'login';
+  let visitorTimer = null;
+  let visitorTrackingUnavailable = false;
 
   const gate = $('cloudGate');
+
+  function createVisitorId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    const hex = [...bytes].map(value => value.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+  }
+
+  function visitorId() {
+    try {
+      let id = localStorage.getItem('SAHHELHA_VISITOR_ID');
+      if (!id) { id = createVisitorId(); localStorage.setItem('SAHHELHA_VISITOR_ID', id); }
+      return id;
+    } catch { return createVisitorId(); }
+  }
+
+  function deviceType() {
+    const ua = navigator.userAgent || '';
+    if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return 'tablet';
+    if (/Mobi|Android|iPhone|iPod/i.test(ua)) return 'mobile';
+    return 'desktop';
+  }
+
+  function browserName() {
+    const ua = navigator.userAgent || '';
+    if (/Edg\//.test(ua)) return 'Edge';
+    if (/OPR\//.test(ua)) return 'Opera';
+    if (/Firefox\//.test(ua)) return 'Firefox';
+    if (/Chrome\//.test(ua)) return 'Chrome';
+    if (/Safari\//.test(ua)) return 'Safari';
+    return 'متصفح آخر';
+  }
+
+  function referrerHost() {
+    try {
+      if (!document.referrer) return null;
+      const host = new URL(document.referrer).hostname;
+      return host === location.hostname ? null : host;
+    } catch { return null; }
+  }
+
+  async function trackVisit(isPageView = false) {
+    if (!db || visitorTrackingUnavailable) return;
+    const { error } = await db.rpc('track_visit', {
+      p_visitor_id: visitorId(),
+      p_path: location.pathname.slice(0, 300),
+      p_device_type: deviceType(),
+      p_browser: browserName(),
+      p_referrer_host: referrerHost(),
+      p_is_pageview: Boolean(isPageView)
+    });
+    if (error) {
+      // لا نوقف التطبيق إذا لم تُشغل ترقية إحصاءات الزوار بعد.
+      if (String(error.code || '').includes('PGRST') || /track_visit/i.test(error.message || '')) visitorTrackingUnavailable = true;
+      console.warn('Visitor tracking:', error.message || error);
+    }
+  }
+
+  function startVisitorTracking() {
+    trackVisit(true);
+    if (visitorTimer) clearInterval(visitorTimer);
+    visitorTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') trackVisit(false);
+    }, 60_000);
+  }
 
   function showStatus(message, type = 'info') {
     const box = $('authStatus');
@@ -290,6 +359,7 @@
     bootingUserId = nextSession.user.id;
     session = nextSession;
     user = nextSession.user;
+    trackVisit(false);
     showGate();
     showStatus('جارٍ تحميل حسابك وبياناتك…', 'info');
 
@@ -669,6 +739,7 @@
     if (error || !data?.ok) return toast('تعذر حذف الحساب. حاول لاحقًا.');
     SecureStorage.clear();
     localStorage.removeItem('SAHHELHA_LAST_USER');
+    localStorage.removeItem('SAHHELHA_VISITOR_ID');
     alert('تم حذف حسابك وبياناتك.');
     location.reload();
   }
@@ -714,7 +785,7 @@
     });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') syncNow(false);
-      else if (document.visibilityState === 'visible') { syncNow(false); listReminders(); }
+      else if (document.visibilityState === 'visible') { syncNow(false); listReminders(); trackVisit(false); }
     });
   }
 
@@ -731,6 +802,7 @@
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       realtime: { params: { eventsPerSecond: 5 } }
     });
+    startVisitorTracking();
     await configureAuthProviders();
 
     const { data, error } = await db.auth.getSession();

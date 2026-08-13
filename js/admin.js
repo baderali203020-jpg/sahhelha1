@@ -7,7 +7,23 @@
   const configured = /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(cfg.SUPABASE_URL || '') &&
     typeof cfg.SUPABASE_ANON_KEY === 'string' && cfg.SUPABASE_ANON_KEY.length > 40 && !cfg.SUPABASE_ANON_KEY.includes('YOUR_');
   let db, user;
-  const state = { subjects: [], questions: [], cards: [], resources: [] };
+  const state = { subjects: [], questions: [], cards: [], resources: [], profiles: [], visitors: [] };
+  let visitorsTimer = null;
+  let heartbeatTimer = null;
+
+  async function trackCurrentVisit() {
+    try {
+      let id = localStorage.getItem('SAHHELHA_VISITOR_ID');
+      if (!id) { id = crypto.randomUUID(); localStorage.setItem('SAHHELHA_VISITOR_ID', id); }
+      const ua = navigator.userAgent || '';
+      const device = /iPad|Tablet/i.test(ua) ? 'tablet' : /Mobi|Android|iPhone/i.test(ua) ? 'mobile' : 'desktop';
+      const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'متصفح آخر';
+      await db.rpc('track_visit', {
+        p_visitor_id: id, p_path: location.pathname, p_device_type: device,
+        p_browser: browser, p_referrer_host: null, p_is_pageview: false
+      });
+    } catch {}
+  }
 
   function guard(title, message, action = true) {
     $('guardTitle').textContent = title;
@@ -46,6 +62,124 @@
   function empty(list, message) {
     list.innerHTML = '';
     const div = document.createElement('div'); div.className = 'empty-admin'; div.textContent = message; list.appendChild(div);
+  }
+
+  function isOnline(date) {
+    return date && Date.now() - new Date(date).getTime() <= 5 * 60_000;
+  }
+
+  function relativeTime(date) {
+    if (!date) return 'لم يدخل بعد';
+    const diff = new Date(date).getTime() - Date.now();
+    const abs = Math.abs(diff);
+    const formatter = new Intl.RelativeTimeFormat('ar-SA', { numeric: 'auto' });
+    if (abs < 60_000) return 'الآن';
+    if (abs < 3_600_000) return formatter.format(Math.round(diff / 60_000), 'minute');
+    if (abs < 86_400_000) return formatter.format(Math.round(diff / 3_600_000), 'hour');
+    if (abs < 7 * 86_400_000) return formatter.format(Math.round(diff / 86_400_000), 'day');
+    return new Date(date).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function deviceLabel(value) {
+    return ({ mobile: 'جوال', tablet: 'جهاز لوحي', desktop: 'كمبيوتر', unknown: 'جهاز غير معروف' })[value] || value;
+  }
+
+  function visitorRows() {
+    const registered = state.profiles.map(item => ({
+      kind: 'registered', id: item.id, title: item.name || 'مستخدم مسجل', subtitle: item.email || 'بلا بريد',
+      detail: `${gradeLabel(item.grade) || 'الصف غير محدد'} • ${Number(item.visit_count || 0)} زيارة`,
+      lastSeen: item.last_seen_at, role: item.role
+    }));
+    const anonymous = state.visitors.filter(item => !item.user_id).map(item => ({
+      kind: 'anonymous', id: item.visitor_id, title: `زائر ${String(item.visitor_id).slice(0, 8)}`,
+      subtitle: `${deviceLabel(item.device_type)} • ${item.browser || 'متصفح غير معروف'}`,
+      detail: `${Number(item.visit_count || 1)} زيارة • ${Number(item.page_views || 0)} مشاهدة`,
+      lastSeen: item.last_seen_at, path: item.last_path
+    }));
+    return [...registered, ...anonymous].sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0));
+  }
+
+  function renderVisitors() {
+    const list = $('visitorList');
+    if (!list) return;
+    const query = text($('visitorSearch')?.value || '').toLowerCase();
+    const filter = $('visitorFilter')?.value || 'all';
+    const rows = visitorRows().filter(row => {
+      if (filter === 'online' && !isOnline(row.lastSeen)) return false;
+      if (filter === 'registered' && row.kind !== 'registered') return false;
+      if (filter === 'anonymous' && row.kind !== 'anonymous') return false;
+      return `${row.title} ${row.subtitle} ${row.id}`.toLowerCase().includes(query);
+    });
+    list.innerHTML = '';
+    if (!rows.length) return empty(list, 'لا توجد زيارات مطابقة حتى الآن');
+
+    for (const item of rows) {
+      const row = document.createElement('article'); row.className = 'visitor-row';
+      const person = document.createElement('div'); person.className = 'visitor-person';
+      const avatar = document.createElement('div'); avatar.className = 'visitor-avatar';
+      avatar.textContent = item.kind === 'registered' ? (item.title.trim().charAt(0) || 'ط') : '🕶️';
+      const identity = document.createElement('div'); identity.style.minWidth = '0';
+      const h = document.createElement('h3'); h.textContent = item.title;
+      const sub = document.createElement('p'); sub.textContent = item.subtitle;
+      const type = document.createElement('span'); type.className = `visitor-type${item.kind === 'anonymous' ? ' anon' : ''}`;
+      type.textContent = item.kind === 'registered' ? (item.role === 'admin' ? 'مدير' : 'حساب مسجل') : 'غير مسجل';
+      identity.append(h, sub, type); person.append(avatar, identity);
+
+      const meta = document.createElement('div'); meta.className = 'visitor-meta';
+      const strong = document.createElement('strong'); strong.textContent = item.detail;
+      const path = document.createElement('p'); path.textContent = item.path ? `آخر صفحة: ${item.path}` : 'بيانات الحساب';
+      meta.append(strong, path);
+
+      const last = document.createElement('div'); last.className = 'visitor-last';
+      const lastStrong = document.createElement('strong'); lastStrong.textContent = relativeTime(item.lastSeen);
+      const exact = document.createElement('p');
+      exact.textContent = item.lastSeen ? new Date(item.lastSeen).toLocaleString('ar-SA') : 'لا يوجد نشاط مسجل';
+      last.append(lastStrong, exact);
+
+      const presence = document.createElement('span');
+      presence.className = `presence${isOnline(item.lastSeen) ? ' online' : ''}`;
+      presence.textContent = isOnline(item.lastSeen) ? 'متصل الآن' : 'غير متصل';
+      row.append(person, meta, last, presence); list.appendChild(row);
+    }
+  }
+
+  function updateVisitorStats() {
+    const rows = visitorRows();
+    const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+    const online = rows.filter(row => isOnline(row.lastSeen)).length;
+    const today = rows.filter(row => row.lastSeen && new Date(row.lastSeen) >= startToday).length;
+    const anonymous = state.visitors.filter(row => !row.user_id).length;
+    if ($('statAccounts')) $('statAccounts').textContent = state.profiles.length;
+    if ($('statOnline')) $('statOnline').textContent = online;
+    if ($('visitorRegistered')) $('visitorRegistered').textContent = state.profiles.length;
+    if ($('visitorAnonymous')) $('visitorAnonymous').textContent = anonymous;
+    if ($('visitorOnline')) $('visitorOnline').textContent = online;
+    if ($('visitorToday')) $('visitorToday').textContent = today;
+  }
+
+  async function loadVisitorData(silent = false) {
+    const list = $('visitorList');
+    const refresh = $('refreshVisitors');
+    if (list) list.classList.add('visitor-refreshing');
+    if (refresh) refresh.disabled = true;
+    try {
+      const [profiles, visitors] = await Promise.all([
+        db.from('profiles').select('id,email,name,grade,role,created_at,last_seen_at,visit_count').order('created_at', { ascending: false }),
+        db.from('visitor_sessions').select('visitor_id,user_id,first_seen_at,last_seen_at,visit_count,page_views,last_path,device_type,browser,referrer_host').order('last_seen_at', { ascending: false }).limit(1000)
+      ]);
+      if (profiles.error) throw profiles.error;
+      if (visitors.error) throw visitors.error;
+      state.profiles = profiles.data || [];
+      state.visitors = visitors.data || [];
+      renderVisitors(); updateVisitorStats();
+      if (!silent) toast('تم تحديث قائمة الزوار');
+    } catch (error) {
+      if (list) empty(list, 'شغّل ملف ENABLE_VISITOR_TRACKING.sql في Supabase أولًا');
+      if (!silent) toast(`تعذر تحميل الزوار: ${error.message}`);
+    } finally {
+      if (list) list.classList.remove('visitor-refreshing');
+      if (refresh) refresh.disabled = false;
+    }
   }
 
   function renderSubjects() {
@@ -102,6 +236,7 @@
     $('statQuestions').textContent = state.questions.length;
     $('statCards').textContent = state.cards.length;
     $('statResources').textContent = state.resources.length;
+    updateVisitorStats();
   }
 
   function fillSubjectOptions() {
@@ -126,6 +261,7 @@
     state.cards = cards.data || [];
     state.resources = resources.data || [];
     fillSubjectOptions(); renderSubjects(); renderQuestions(); renderCards(); renderResources(); updateStats();
+    await loadVisitorData(true);
   }
 
   function resetForm(kind) {
@@ -295,6 +431,7 @@
     document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(item => item.classList.toggle('active', item === tab));
       document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${tab.dataset.panel}`));
+      if (tab.dataset.panel === 'visitors') loadVisitorData(true);
     }));
     $('subjectForm').addEventListener('submit', saveSubject); $('questionForm').addEventListener('submit', saveQuestion);
     $('cardForm').addEventListener('submit', saveCard); $('resourceForm').addEventListener('submit', saveResource);
@@ -302,6 +439,9 @@
     $('subjectUnits').addEventListener('input', validateUnits);
     $('subjectSearch').addEventListener('input', renderSubjects); $('questionSearch').addEventListener('input', renderQuestions);
     $('cardSearch').addEventListener('input', renderCards); $('resourceSearch').addEventListener('input', renderResources);
+    $('visitorSearch')?.addEventListener('input', renderVisitors);
+    $('visitorFilter')?.addEventListener('change', renderVisitors);
+    $('refreshVisitors')?.addEventListener('click', () => loadVisitorData(false));
     $('adminLogout').addEventListener('click', async () => { await db.auth.signOut(); location.href = './'; });
   }
 
@@ -312,10 +452,19 @@
     const { data } = await db.auth.getSession();
     if (!data.session?.user) return guard('سجّل الدخول أولًا', 'افتح التطبيق وسجّل الدخول بحساب المدير.');
     user = data.session.user;
+    trackCurrentVisit();
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => { if (document.visibilityState === 'visible') trackCurrentVisit(); }, 60_000);
     const { data: profile, error } = await db.from('profiles').select('name,email,role').eq('id', user.id).single();
     if (error || profile?.role !== 'admin') return guard('غير مصرح', 'هذا الحساب ليس مديرًا. غيّر role إلى admin من Supabase SQL Editor.');
     $('adminIdentity').textContent = `${profile.name || 'المدير'} • ${profile.email || user.email}`;
-    try { await loadAll(); $('adminGuard').classList.add('hidden'); }
+    try {
+      await loadAll(); $('adminGuard').classList.add('hidden');
+      if (visitorsTimer) clearInterval(visitorsTimer);
+      visitorsTimer = setInterval(() => {
+        if ($('panel-visitors')?.classList.contains('active') && document.visibilityState === 'visible') loadVisitorData(true);
+      }, 30_000);
+    }
     catch (loadError) { guard('تعذر تحميل المحتوى', `${loadError.message}. تأكد من تنفيذ schema.sql.`); }
   }
 

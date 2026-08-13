@@ -22,12 +22,15 @@
 <div class="stat"><strong id="statQuestions">—</strong><span>الأسئلة</span></div>
 <div class="stat"><strong id="statCards">—</strong><span>البطاقات</span></div>
 <div class="stat"><strong id="statResources">—</strong><span>الموارد</span></div>
+<div class="stat"><strong id="statAccounts">—</strong><span>الحسابات</span></div>
+<div class="stat"><strong id="statOnline">—</strong><span>متصل الآن</span></div>
 </section>
 <nav class="tabs" aria-label="أقسام الإدارة">
 <button class="tab active" data-panel="subjects" type="button">📚 المواد</button>
 <button class="tab" data-panel="questions" type="button">🧠 الأسئلة</button>
 <button class="tab" data-panel="cards" type="button">🃏 البطاقات</button>
 <button class="tab" data-panel="resources" type="button">📎 الموارد</button>
+<button class="tab" data-panel="visitors" type="button">👥 الزوار</button>
 </nav>
 
 <section class="panel active" id="panel-subjects">
@@ -85,6 +88,24 @@
 <div class="card"><div class="list-toolbar"><input id="resourceSearch" placeholder="بحث في الموارد…"></div><div class="records" id="resourceList"></div></div>
 </div>
 </section>
+<section class="panel" id="panel-visitors">
+  <div class="visitor-overview">
+    <div class="visitor-kpi"><span>👤</span><strong id="visitorRegistered">0</strong><small>حساب مسجل</small></div>
+    <div class="visitor-kpi"><span>🕶️</span><strong id="visitorAnonymous">0</strong><small>زائر غير مسجل</small></div>
+    <div class="visitor-kpi"><span>🟢</span><strong id="visitorOnline">0</strong><small>متصل الآن</small></div>
+    <div class="visitor-kpi"><span>📅</span><strong id="visitorToday">0</strong><small>زار اليوم</small></div>
+  </div>
+  <div class="card visitor-card">
+    <div class="visitor-heading"><div><h2>الزوار والمستخدمون</h2><p>يُعد الزائر متصلًا إذا كان نشطًا خلال آخر 5 دقائق.</p></div><button class="secondary" id="refreshVisitors" type="button">↻ تحديث</button></div>
+    <div class="visitor-toolbar">
+      <input id="visitorSearch" type="search" placeholder="ابحث بالاسم أو البريد أو رقم الزائر…">
+      <select id="visitorFilter" aria-label="تصفية الزوار"><option value="all">الكل</option><option value="online">متصل الآن</option><option value="registered">حسابات مسجلة</option><option value="anonymous">غير مسجلين</option></select>
+    </div>
+    <div class="privacy-note">🔐 لا يجمع هذا القسم عنوان IP أو بصمة خفية. الزائر غير المسجل يظهر برقم عشوائي ونوع الجهاز والمتصفح فقط.</div>
+    <div class="visitor-list" id="visitorList"><div class="empty-admin">جارٍ تحميل الزوار…</div></div>
+  </div>
+</section>
+
 </main>
 </div>
 <div class="admin-toast" id="adminToast"></div>
