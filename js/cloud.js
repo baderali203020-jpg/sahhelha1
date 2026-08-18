@@ -129,7 +129,11 @@
   function setAuthMode(mode) {
     authMode = mode;
     clearStatus();
-    document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.toggle('on', tab.dataset.mode === mode));
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      const selected = tab.dataset.mode === mode;
+      tab.classList.toggle('on', selected);
+      tab.setAttribute('aria-selected', String(selected));
+    });
     const nameField = $('authNameField');
     const submit = $('authSubmit');
     const forgot = $('forgotPassword');
@@ -858,3 +862,229 @@
     showStatus(`تعذر تشغيل التطبيق: ${error.message}`, 'error');
   });
 })();
+
+/* ===== سَهِّلها V5: إصلاحات حرجة مجمعة في ملف واحد ===== */
+(() => {
+  'use strict';
+
+  // 1) إصلاح اليوم الدراسي: الأحد إلى الخميس، والجمعة/السبت عطلة.
+  function schoolDayIndexV5() {
+    const day = new Intl.DateTimeFormat('en-US', {
+      weekday: 'short', timeZone: 'Asia/Riyadh'
+    }).format(new Date());
+    const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4 };
+    return Object.prototype.hasOwnProperty.call(map, day) ? map[day] : null;
+  }
+
+  uCC = function () {
+    const day = schoolDayIndexV5();
+    const today = day === null ? [] : (sch['d' + day] || []);
+    const counter = document.getElementById('stC');
+    if (counter) counter.textContent = today.filter(item => String(item || '').trim()).length;
+  };
+
+  updTodayList = function () {
+    const list = document.getElementById('todayList');
+    if (!list) return;
+    const day = schoolDayIndexV5();
+    if (day === null) {
+      list.innerHTML = '<div class="empty"><div class="e-ico">🌤️</div><div class="e-txt">عطلة نهاية الأسبوع</div></div>';
+      return;
+    }
+    const today = sch['d' + day] || [];
+    const filled = today.map((item, index) => ({ s: item, i: index }))
+      .filter(item => String(item.s || '').trim());
+    if (!filled.length) {
+      list.innerHTML = '<div class="empty"><div class="e-ico">☕</div><div class="e-txt">لا توجد حصص اليوم</div></div>';
+      return;
+    }
+    list.innerHTML = '<div class="pds">' + filled.map(item =>
+      '<div class="pd"><div class="pn">' + (item.i + 1) + '</div><div class="pi" style="padding:0"><div style="font-weight:700;font-size:.9rem">' + item.s + '</div><div class="pt">' + pTi[item.i] + '</div></div></div>'
+    ).join('') + '</div>';
+  };
+
+  // 2) خلط الأسئلة والخيارات مع الحفاظ على موقع الإجابة الصحيحة.
+  function shuffleV5(items) {
+    const result = items.slice();
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function mixQuestionV5(question) {
+    const choices = (question.opts || []).map((value, index) => ({
+      value, correct: index === question.correct
+    }));
+    const mixed = shuffleV5(choices);
+    return {
+      q: question.q,
+      opts: mixed.map(choice => choice.value),
+      correct: mixed.findIndex(choice => choice.correct),
+      explain: question.explain,
+      answered: false
+    };
+  }
+
+  startQuiz = function () {
+    const subject = document.getElementById('qSub').value;
+    const count = parseInt(document.getElementById('qCount').value, 10);
+    if (!subject) return toast('اختر المادة!');
+    const bank = quizBank[subject];
+    if (!bank || !bank.length) return toast('لا توجد أسئلة لهذه المادة');
+    curQuiz = shuffleV5(bank).slice(0, Math.min(count, bank.length)).map(mixQuestionV5);
+    qIdx = 0; qScore = 0; renderQ();
+  };
+
+  // 3) تقويم صادق وديناميكي بدل بيانات 1447 القديمة.
+  function installCalendarV5() {
+    const panel = document.getElementById('ipCal');
+    if (!panel) return;
+    panel.innerHTML = `
+      <div class="ip-h"><button type="button" class="bb" onclick="cP('ipCal')">→</button><h2>📅 التقويم الدراسي</h2></div>
+      <div class="ip-b">
+        <div class="sem-c cur"><h3>📆 تاريخ اليوم</h3><div class="sd" id="calGregorianV5">—</div><div class="sd" id="calHijriV5">—</div></div>
+        <div class="security-info"><div class="s-ico">ℹ️</div><div class="s-txt"><b>المواعيد الرسمية تتغير سنويًا</b><br>راجع إعلان وزارة التعليم ومدرستك للمواعيد المعتمدة.</div></div>
+        <a class="btn btn-out" href="https://www.moe.gov.sa/" target="_blank" rel="noopener" style="display:block;text-decoration:none;text-align:center">فتح موقع وزارة التعليم</a>
+        <div class="sec-h"><h3>📝 اختباراتك القادمة</h3></div>
+        <div id="calUpcomingV5"></div>
+      </div>`;
+  }
+
+  function renderCalendarV5() {
+    const now = new Date();
+    const gregorian = document.getElementById('calGregorianV5');
+    const hijri = document.getElementById('calHijriV5');
+    if (gregorian) gregorian.textContent = new Intl.DateTimeFormat('ar-SA', {
+      dateStyle: 'full', timeZone: 'Asia/Riyadh'
+    }).format(now);
+    if (hijri) {
+      try {
+        hijri.textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+          dateStyle: 'full', timeZone: 'Asia/Riyadh'
+        }).format(now);
+      } catch { hijri.textContent = 'التاريخ الهجري غير متاح في هذا المتصفح'; }
+    }
+    const area = document.getElementById('calUpcomingV5');
+    if (!area) return;
+    const upcoming = (exams || []).filter(exam => new Date(exam.date + 'T23:59:59') >= now)
+      .sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+    if (!upcoming.length) {
+      area.innerHTML = '<div class="empty"><div class="e-ico">🗓️</div><div class="e-txt">لا توجد اختبارات قادمة</div></div>';
+      return;
+    }
+    area.innerHTML = '<div class="hlist">' + upcoming.map(exam => {
+      const date = new Date(exam.date + 'T12:00:00');
+      return '<div class="hi"><div class="hico">📝</div><div><h4>' + Security.sanitize(exam.sub) + '</h4><p>' + date.toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</p></div></div>';
+    }).join('') + '</div>';
+  }
+
+  installCalendarV5();
+  const openPanelBeforeV5 = oP;
+  oP = function (panelName) {
+    openPanelBeforeV5(panelName);
+    if (panelName === 'cal') renderCalendarV5();
+  };
+
+  // 4) تحويل مولد البحث إلى مخطط تعلم، ومنع المراجع المختلقة.
+  function updateResearchUiV5() {
+    const card = document.querySelector('.fc[onclick="oP(\'research\')"]');
+    if (card) {
+      const title = card.querySelector('.fc-title');
+      const desc = card.querySelector('.fc-desc');
+      if (title) title.textContent = 'مخطط بحث';
+      if (desc) desc.textContent = 'منظم وموثّق';
+    }
+    const heading = document.querySelector('#ipResearch .ip-h h2');
+    if (heading) heading.textContent = '📝 مساعد إعداد البحث';
+    const button = document.querySelector('#ipResearch .rconfig .btn');
+    if (button) { button.id = 'generateResearchV5'; button.textContent = '✨ إنشاء مخطط موثّق'; }
+    const output = document.getElementById('rO');
+    if (output) output.style.whiteSpace = 'pre-wrap';
+    const config = document.querySelector('#ipResearch .rconfig');
+    if (config && !document.getElementById('researchNoticeV5')) {
+      const notice = document.createElement('div');
+      notice.id = 'researchNoticeV5';
+      notice.className = 'security-info';
+      notice.innerHTML = '<div class="s-ico">💡</div><div class="s-txt"><b>مساعد للتعلّم وليس بحثًا جاهزًا</b><br>تحقق من المعلومات واستخدم مصادر حقيقية واكتب بأسلوبك.</div>';
+      config.after(notice);
+    }
+  }
+
+  updateResearchUiV5();
+  genR = async function () {
+    const topic = Security.limit(document.getElementById('rT').value.trim(), 100);
+    if (!topic) return toast('اكتب عنوان البحث!');
+    const length = document.getElementById('rL').value;
+    const button = document.getElementById('generateResearchV5');
+    const output = document.getElementById('rO');
+    document.getElementById('rW').style.display = 'block';
+    button.disabled = true; button.textContent = 'جارٍ إعداد المخطط…';
+    output.textContent = 'جارٍ إعداد خطة بحث تعليمية…';
+    const detail = length === 'short' ? 'مختصرة' : length === 'long' ? 'مفصلة' : 'متوسطة';
+    const prompt = `أنشئ خطة بحث تعليمية ${detail} للطالب عن موضوع: "${topic}". أعطني سؤال البحث، الهدف، مخطط عناوين، نقاط كل قسم، كلمات بحث مقترحة، وأنواع مصادر موثوقة. لا تكتب بحثًا جاهزًا ولا تختلق أسماء كتب أو روابط أو مراجع.`;
+    try {
+      if (window.SahhelhaCloud?.ready) {
+        const result = await window.SahhelhaCloud.askAI(prompt, []);
+        output.textContent = `مخطط بحث: ${topic}\n\n${result.answer}\n\nتنبيه: تحقّق من كل معلومة ومصدر، ثم اكتب البحث بأسلوبك.`;
+      } else {
+        output.textContent = `مخطط بحث: ${topic}\n\n1. سؤال البحث.\n2. مقدمة وتعريف.\n3. الخلفية والمفاهيم.\n4. الأهمية والتطبيقات.\n5. التحديات والحلول.\n6. النتائج والتوصيات.\n\nمصادر مقترحة: جهات حكومية وجامعات ودوريات علمية؛ تحقّق من الرابط قبل استخدامه.`;
+      }
+      SecureStorage.set('rs', 1); toast('تم إعداد المخطط ✨');
+    } catch (error) {
+      output.textContent = 'تعذر إعداد المخطط الآن: ' + (error.message || 'حاول لاحقًا');
+    } finally {
+      button.disabled = false; button.textContent = '✨ إنشاء مخطط موثّق';
+    }
+  };
+
+  // 5) مؤقت دقيق عند الانتقال للخلفية.
+  let pomoEndAtV5 = 0;
+  function finishPomoV5() {
+    clearInterval(pInt); pRun = false; pSec = 0; pomoEndAtV5 = 0; uP(); playS();
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    SecureStorage.set('pm', (SecureStorage.get('pm') || 0) + 1);
+    SecureStorage.set('pmMin', (SecureStorage.get('pmMin') || 0) + Math.floor(originalSec / 60));
+    const today = new Date().toDateString();
+    const stats = SecureStorage.get('pmToday') || { date: '', count: 0 };
+    if (stats.date === today) stats.count++; else { stats.date = today; stats.count = 1; }
+    SecureStorage.set('pmToday', stats); loadPomoStats(); toast('🎉 انتهى!');
+  }
+
+  stP = function () {
+    if (pRun) return;
+    if (pSec <= 0) return toast('حدد الوقت!');
+    document.getElementById('pL').textContent = Security.sanitize(document.getElementById('pLabel').value.trim()) || 'جلسة';
+    pRun = true; pomoEndAtV5 = Date.now() + pSec * 1000;
+    clearInterval(pInt);
+    pInt = setInterval(() => {
+      pSec = Math.max(0, Math.ceil((pomoEndAtV5 - Date.now()) / 1000)); uP();
+      if (pSec <= 0) finishPomoV5();
+    }, 250);
+  };
+  paP = function () {
+    if (!pRun) return;
+    pSec = Math.max(0, Math.ceil((pomoEndAtV5 - Date.now()) / 1000));
+    clearInterval(pInt); pRun = false; pomoEndAtV5 = 0; uP(); toast('توقف ⏸');
+  };
+  reP = function () {
+    clearInterval(pInt); pRun = false; pomoEndAtV5 = 0; pSec = originalSec; uP();
+  };
+
+  // 6) تحسينات وصول بسيطة، وإخفاء OpenAI حتى يتم تفعيل فوترته.
+  document.querySelectorAll('button:not([type])').forEach(button => button.type = 'button');
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', String(tab.classList.contains('on')));
+    tab.addEventListener('click', () => setTimeout(() => {
+      document.querySelectorAll('.auth-tab').forEach(item => item.setAttribute('aria-selected', String(item.classList.contains('on'))));
+    }, 0));
+  });
+  const openAIOption = document.querySelector('#aiProvider option[value="openai"]');
+  if (openAIOption) { openAIOption.disabled = true; openAIOption.textContent = 'OpenAI (غير مفعّل)'; }
+
+  uCC(); updTodayList();
+  console.info('Sahhilha V5 fixes loaded');
+})();
+
