@@ -1088,3 +1088,128 @@
   console.info('Sahhilha V5 fixes loaded');
 })();
 
+/* ===== سَهِّلها V6: تنظيم الواجهة الرئيسية ===== */
+(() => {
+  'use strict';
+
+  const serviceCard = (icon, title, desc, action, badge = '') => `
+    <div class="fc" onclick="${action}">
+      ${badge ? `<div class="fc-new">${badge}</div>` : ''}
+      <div class="fc-ico">${icon}</div>
+      <div class="fc-title">${title}</div>
+      ${desc ? `<div class="fc-desc">${desc}</div>` : ''}
+    </div>`;
+
+  function injectV6Styles() {
+    if (document.getElementById('v6Styles')) return;
+    const style = document.createElement('style');
+    style.id = 'v6Styles';
+    style.textContent = `
+      .v6-primary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
+      .v6-all-btn{width:100%;border:1.5px solid var(--green);background:var(--green-lite);color:var(--green);border-radius:14px;padding:12px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:18px}
+      .v6-all-btn:active{transform:scale(.98)}
+      .v6-group{margin-bottom:24px}
+      .v6-group-title{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:1rem;font-weight:900;color:var(--text)}
+      .v6-group-title span{font-size:1.25rem}
+      .v6-group .grid{margin-bottom:0}
+      .v6-subtitle{font-size:.75rem;color:var(--text2);margin-top:2px;font-weight:500}
+      .v6-account-links{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .v6-link{border:1px solid var(--brd);background:#fff;border-radius:13px;padding:12px;font-family:inherit;font-weight:800;cursor:pointer;color:var(--text)}
+      @media(min-width:700px){.v6-primary-grid,.v6-group .grid{grid-template-columns:repeat(3,1fr)}.v6-primary-grid .fc:nth-child(4){grid-column:auto}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildAllServicesPanel() {
+    if (document.getElementById('ipAllServicesV6')) return;
+    const panel = document.createElement('div');
+    panel.className = 'ip';
+    panel.id = 'ipAllServicesV6';
+    panel.innerHTML = `
+      <div class="ip-h"><button type="button" class="bb" onclick="cP('ipAllServicesV6')">→</button><div><h2>✨ كل الخدمات</h2><div class="v6-subtitle">اختر ما تحتاجه حسب هدفك</div></div></div>
+      <div class="ip-b">
+        <section class="v6-group">
+          <div class="v6-group-title"><span>📚</span><div>الدراسة والتعلّم</div></div>
+          <div class="grid">
+            ${serviceCard('🤖','المساعد الذكي','اسأل وتعلّم',"oP('chat')")}
+            ${serviceCard('📚','مكتبة المنهج','المواد والدروس',"oP('lib')")}
+            ${serviceCard('🧠','بنك الأسئلة','اختبر فهمك',"oP('quiz')")}
+            ${serviceCard('📋','خطة المذاكرة','نظّم استعدادك',"oP('plan')")}
+            ${serviceCard('🃏','بطاقات الحفظ','مراجعة سريعة',"oP('flash')")}
+            ${serviceCard('📝','مخطط البحث','خطة موثّقة',"oP('research')")}
+          </div>
+        </section>
+        <section class="v6-group">
+          <div class="v6-group-title"><span>🗓️</span><div>التنظيم والمواعيد</div></div>
+          <div class="grid">
+            ${serviceCard('✅','المهام','تابع إنجازك',"oP('tasks')")}
+            ${serviceCard('🗓️','الجدول','حصص الأسبوع',"oP('sch')")}
+            ${serviceCard('🔔','التذكيرات','لا تنسَ موعدًا',"oP('reminders')")}
+            ${serviceCard('📅','الاختبارات','مواعيد اختباراتك',"oP('exams')")}
+            ${serviceCard('📒','الملاحظات','دوّن أفكارك',"oP('notes')")}
+            ${serviceCard('⏱️','مؤقت التركيز','جلسات مذاكرة',"oP('pomo')")}
+          </div>
+        </section>
+        <section class="v6-group">
+          <div class="v6-group-title"><span>📊</span><div>الدرجات والتقدّم</div></div>
+          <div class="grid">
+            ${serviceCard('📊','متتبع الدرجات','احسب المطلوب',"oP('tracker')")}
+            ${serviceCard('🎯','حاسبة المعدل','تابع معدلك',"oP('gpa')")}
+            ${serviceCard('🏆','الإنجازات','شاهد تقدّمك',"oP('achieve')")}
+            ${serviceCard('📅','التقويم','اليوم والاختبارات',"oP('cal')")}
+          </div>
+        </section>
+        <section class="v6-group">
+          <div class="v6-group-title"><span>⚙️</span><div>الحساب والإعدادات</div></div>
+          <div class="v6-account-links">
+            <button type="button" class="v6-link" onclick="SahhelhaCloud.openAccount()">👤 حسابي</button>
+            <button type="button" class="v6-link" onclick="oP('privacy')">🔐 الخصوصية</button>
+            <button type="button" class="v6-link admin-only" onclick="location.href='admin.html'">🛠️ الإدارة</button>
+          </div>
+        </section>
+      </div>`;
+    document.body.appendChild(panel);
+  }
+
+  function organizeHomeV6() {
+    if (document.getElementById('v6PrimaryServices')) return;
+    const body = document.querySelector('#app > .body');
+    if (!body) return;
+    const sections = [...body.querySelectorAll(':scope > .sec-h')];
+    const quickHeading = sections.find(section => section.querySelector('h3')?.textContent.includes('الخدمات السريعة'));
+    const toolsHeading = sections.find(section => section.querySelector('h3')?.textContent.trim() === 'الأدوات');
+    if (!quickHeading) return;
+    const oldQuickGrid = quickHeading.nextElementSibling;
+    if (oldQuickGrid?.classList.contains('grid')) oldQuickGrid.style.display = 'none';
+    if (toolsHeading) {
+      toolsHeading.style.display = 'none';
+      const toolsGrid = toolsHeading.nextElementSibling;
+      if (toolsGrid?.classList.contains('grid')) toolsGrid.style.display = 'none';
+    }
+    quickHeading.innerHTML = '<div><h3>ابدأ الآن</h3><div class="v6-subtitle">أهم ما تحتاجه للمذاكرة اليوم</div></div><span class="see-all" onclick="openAllServicesV6()">كل الخدمات</span>';
+    const wrapper = document.createElement('div');
+    wrapper.id = 'v6PrimaryServices';
+    wrapper.innerHTML = `
+      <div class="v6-primary-grid">
+        ${serviceCard('🤖','المساعد الذكي','اسأل أي سؤال',"oP('chat')")}
+        ${serviceCard('🧠','بنك الأسئلة','اختبر نفسك',"oP('quiz')")}
+        ${serviceCard('📋','خطة المذاكرة','استعد بذكاء',"oP('plan')")}
+        ${serviceCard('📅','الاختبارات','تابع مواعيدك',"oP('exams')")}
+      </div>
+      <button type="button" class="v6-all-btn" onclick="openAllServicesV6()">عرض كل الخدمات والأدوات ←</button>`;
+    quickHeading.after(wrapper);
+  }
+
+  window.openAllServicesV6 = function () {
+    document.getElementById('ipAllServicesV6')?.classList.add('show');
+    document.querySelectorAll('#ipAllServicesV6 .admin-only').forEach(element => {
+      element.classList.toggle('visible', window.SahhelhaCloud?.profile?.role === 'admin');
+    });
+  };
+
+  injectV6Styles();
+  buildAllServicesPanel();
+  organizeHomeV6();
+  console.info('Sahhilha V6 interface loaded');
+})();
+
