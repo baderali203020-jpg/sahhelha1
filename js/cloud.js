@@ -1212,4 +1212,134 @@
   organizeHomeV6();
   console.info('Sahhilha V6 interface loaded');
 })();
+/* ===== سَهِّلها V7: الواجهة المدمجة النهائية ===== */
+(() => {
+  'use strict';
+
+  const iconV7 = name => {
+    const paths = {
+      logo: '<path d="m3 9 9-5 9 5-9 5z"/><path d="M7 12v4c3 2 7 2 10 0v-4M20 10v5"/>',
+      bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+      user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+      spark: '<path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+      send: '<path d="m4 4 17 8-17 8 3-8zM7 12h14"/>',
+      book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5zM4 6.5v13"/>',
+      quiz: '<circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 1 1 4.8 2.4c-1.2.8-2 1.4-2 2.6M12 18h.01"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18m-13 5 2 2 5-5"/>',
+      clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6M9 18h4"/>',
+      tasks: '<path d="M9 6h11M9 12h11M9 18h11m-17-12 1 1 2-2m-3 7 1 1 2-2m-3 7 1 1 2-2"/>',
+      cards: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M8 2h9a2 2 0 0 1 2 2M2 8v9a2 2 0 0 0 2 2"/>',
+      doc: '<path d="M6 2h8l4 4v16H6zM14 2v5h5M9 12h6M9 16h6"/>',
+      note: '<path d="M5 3h14v14l-4 4H5zM15 21v-4h4M9 8h6M9 12h6"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/>',
+      chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+      target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+      trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/>',
+      home: '<path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7"/>',
+      grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+      shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>'
+    };
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.grid}</svg>`;
+  };
+
+  function addStylesV7() {
+    if (document.getElementById('v7Styles')) return;
+    const style = document.createElement('style');
+    style.id = 'v7Styles';
+    style.textContent = `
+      body{background:#e2e9e4!important}
+      #app{max-width:520px;margin:0 auto;background:#f7f5ef;min-height:100vh;padding-bottom:82px;box-shadow:0 0 35px #17392318}
+      .v7-top{height:68px;background:#fff;border-bottom:1px solid #dfe7e2;display:flex;align-items:center;justify-content:space-between;padding:13px 17px;position:sticky;top:0;z-index:80}
+      .v7-brand{display:flex;align-items:center;gap:9px;color:#236b43;font-weight:900;font-size:19px}.v7-mark{width:35px;height:35px;border-radius:11px;background:#236b43;color:#fff;display:grid;place-items:center}.v7-mark svg{width:20px}.v7-actions{display:flex;gap:8px}.v7-circle{width:38px;height:38px;border:1px solid #dfe7e2;border-radius:12px;display:grid;place-items:center;color:#236b43;background:#fff;cursor:pointer}.v7-circle svg{width:21px;height:21px}
+      .v7-main{padding:15px}.v7-welcome{display:flex;align-items:end;justify-content:space-between;margin:2px 2px 12px}.v7-welcome small{color:#748078;font-size:11px}.v7-welcome h1{font-size:23px;margin:4px 0 0}.v7-date{font-size:10px;color:#748078}
+      .v7-hero{background:linear-gradient(135deg,#1e603c,#33865b);border-radius:23px;padding:18px;color:#fff;position:relative;overflow:hidden}.v7-hero:before{content:'';position:absolute;width:175px;height:175px;border:32px solid #ffffff0c;border-radius:50%;left:-75px;top:-72px}.v7-hero-row{display:flex;align-items:center;gap:11px}.v7-hero-icon{width:48px;height:48px;border-radius:15px;background:#ffffff1b;display:grid;place-items:center;flex:none}.v7-hero-icon svg{width:27px;height:27px}.v7-hero h2{font-size:18px;margin:0 0 4px}.v7-hero p{font-size:10px;opacity:.78;margin:0}.v7-ask{margin-top:14px;background:#fff;border-radius:13px;padding:6px 7px 6px 12px;display:flex;align-items:center;gap:7px;position:relative}.v7-ask input{border:0;outline:0;flex:1;font-family:inherit;font-size:11px;color:#17211b;background:transparent}.v7-send{width:32px;height:32px;border:0;border-radius:9px;background:#f2c94c;color:#254b34;display:grid;place-items:center;cursor:pointer}.v7-send svg{width:16px;height:16px}.v7-goal{display:flex;align-items:center;gap:10px;margin-top:13px}.v7-goal span{font-size:10px;opacity:.8}.v7-track{height:6px;flex:1;background:#ffffff2b;border-radius:20px;overflow:hidden}.v7-track i{display:block;width:0;height:100%;background:#f2c94c;transition:.35s}.v7-goal b{font-size:11px}
+      .v7-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}.v7-stat{background:#fff;border:1px solid #dfe7e2;border-radius:15px;padding:11px 5px;text-align:center}.v7-stat b{display:block;color:#236b43;font-size:18px}.v7-stat span{font-size:9px;color:#748078}
+      .v7-head{display:flex;align-items:end;justify-content:space-between;margin:20px 1px 10px}.v7-head h3{font-size:15px;margin:0}.v7-head p{font-size:9px;color:#748078;margin:3px 0 0}.v7-link{border:0;background:none;color:#236b43;font-family:inherit;font-weight:800;font-size:10px;cursor:pointer}
+      .v7-schedule{background:#fff;border:1px solid #dfe7e2;border-radius:17px;padding:6px 13px}.v7-schedule .empty{box-shadow:none;padding:22px;background:transparent}.v7-schedule .pds{box-shadow:none}.v7-schedule .pd{border:0;border-bottom:1px solid #e9eee9;border-radius:0;padding:10px 0;background:transparent;box-shadow:none}.v7-schedule .pd:last-child{border-bottom:0}.v7-schedule .pn{background:#eaf4ee;color:#236b43;border-radius:10px}
+      .v7-services{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v7-service{background:#fff;border:1px solid #dfe7e2;border-radius:17px;padding:14px;min-height:115px;position:relative;cursor:pointer;transition:.2s}.v7-service:hover{transform:translateY(-2px);box-shadow:0 8px 20px #1f5c3810}.v7-service:first-child{background:#236b43;border-color:#236b43;color:#fff}.v7-sicon{width:42px;height:42px;border-radius:12px;background:#eaf4ee;color:#236b43;display:grid;place-items:center;margin-bottom:11px}.v7-service:first-child .v7-sicon{background:#ffffff1c;color:#fff}.v7-sicon svg{width:23px;height:23px}.v7-service h4{font-size:12px;margin:0}.v7-service p{font-size:9px;color:#748078;margin:4px 0}.v7-service:first-child p{color:#d5e8dd}.v7-arrow{position:absolute;left:13px;bottom:12px;color:#9aaba1}.v7-service:first-child .v7-arrow{color:#fff}.v7-all{width:100%;margin-top:10px;padding:11px;border:1.5px solid #236b43;border-radius:13px;background:transparent;color:#236b43;font-family:inherit;font-weight:800;cursor:pointer}
+      .bnav{max-width:520px;margin:auto;height:70px;padding:0!important;background:#fff;border-top:1px solid #dfe7e2}.bnav .ni{font-size:9px;color:#849087;padding:7px 14px}.bnav .ni svg{width:20px;height:20px}.bnav .ni.on{color:#236b43}.bnav .nn{height:22px;display:grid;place-items:center}
+      #ipAllServicesV6 .fc-ico svg{width:24px;height:24px}.v6-group-title>span svg{width:22px;height:22px}.v6-link{display:flex;align-items:center;justify-content:center;gap:7px}.v6-link svg{width:18px;height:18px}
+      @media(max-width:560px){body{background:#f7f5ef!important}#app{max-width:none;box-shadow:none}.bnav{max-width:none}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildHomeV7() {
+    const app = document.getElementById('app');
+    if (!app || document.getElementById('v7Home')) return;
+    app.innerHTML = `
+      <header class="v7-top"><div class="v7-brand"><div class="v7-mark">${iconV7('logo')}</div><span>سَهِّلها</span></div><div class="v7-actions"><button type="button" class="v7-circle" onclick="oP('reminders')" aria-label="التذكيرات">${iconV7('bell')}</button><button type="button" class="v7-circle" onclick="SahhelhaCloud.openAccount()" aria-label="الحساب">${iconV7('user')}</button></div></header>
+      <main class="v7-main" id="v7Home">
+        <div class="v7-welcome"><div><small>مرحبًا بعودتك</small><h1><span id="greetTime">مساء الخير</span>، <span id="dN">طالب</span></h1></div><div class="v7-date" id="v7Date">—</div></div>
+        <section class="v7-hero"><div class="v7-hero-row"><div class="v7-hero-icon">${iconV7('spark')}</div><div><h2>وش ودك تتعلم اليوم؟</h2><p>اسأل عن درس، مسألة، أو اطلب اختبارًا سريعًا</p></div></div><div class="v7-ask"><input id="v7AskInput" type="text" maxlength="500" placeholder="اكتب سؤالك هنا..."><button type="button" class="v7-send" onclick="sendFromHomeV7()" aria-label="إرسال">${iconV7('send')}</button></div><div class="v7-goal"><span>إنجاز المهام</span><div class="v7-track"><i id="v7GoalBar"></i></div><b id="v7GoalPct">0%</b></div></section>
+        <div class="v7-stats"><div class="v7-stat"><b id="stC">0</b><span>حصص اليوم</span></div><div class="v7-stat"><b id="stT">0</b><span>مهام متبقية</span></div><div class="v7-stat"><b id="stE">0</b><span>اختبار قريب</span></div></div>
+        <div class="v7-head"><div><h3>جدول اليوم</h3><p>الحصص القادمة</p></div><button type="button" class="v7-link" onclick="oP('sch')">عرض الجدول</button></div><div class="v7-schedule" id="todayList"></div>
+        <div class="v7-head"><div><h3>ابدأ الآن</h3><p>الخدمات الأكثر استخدامًا</p></div><button type="button" class="v7-link" onclick="openAllServicesV6()">كل الخدمات</button></div>
+        <div class="v7-services"><article class="v7-service" onclick="oP('chat')"><div class="v7-sicon">${iconV7('spark')}</div><h4>المساعد الذكي</h4><p>شرح واضح وسريع</p><span class="v7-arrow">←</span></article><article class="v7-service" onclick="oP('quiz')"><div class="v7-sicon">${iconV7('quiz')}</div><h4>بنك الأسئلة</h4><p>اختبر مستوى فهمك</p><span class="v7-arrow">←</span></article><article class="v7-service" onclick="oP('plan')"><div class="v7-sicon">${iconV7('calendar')}</div><h4>خطة المذاكرة</h4><p>استعد بترتيب</p><span class="v7-arrow">←</span></article><article class="v7-service" onclick="oP('exams')"><div class="v7-sicon">${iconV7('clipboard')}</div><h4>الاختبارات</h4><p>تابع مواعيدك</p><span class="v7-arrow">←</span></article></div>
+        <button type="button" class="v7-all" onclick="openAllServicesV6()">عرض كل الخدمات والأدوات</button>
+      </main>`;
+  }
+
+  function updateGoalV7() {
+    const all = Array.isArray(tasks) ? tasks.length : 0;
+    const complete = all ? tasks.filter(task => task.done).length : 0;
+    const percent = all ? Math.round(complete / all * 100) : 0;
+    const bar = document.getElementById('v7GoalBar');
+    const label = document.getElementById('v7GoalPct');
+    if (bar) bar.style.width = percent + '%';
+    if (label) label.textContent = percent + '%';
+  }
+
+  function updateDateV7() {
+    const date = document.getElementById('v7Date');
+    if (date) date.textContent = new Intl.DateTimeFormat('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' }).format(new Date());
+  }
+
+  window.sendFromHomeV7 = function () {
+    const input = document.getElementById('v7AskInput');
+    const value = input?.value.trim();
+    oP('chat');
+    if (value) {
+      const chat = document.getElementById('cIn');
+      if (chat) { chat.value = value; setTimeout(() => sndM(), 120); }
+      input.value = '';
+    }
+  };
+
+  function rebuildBottomNavV7() {
+    const nav = document.querySelector('.bnav');
+    if (!nav) return;
+    nav.innerHTML = `<div class="ni on" onclick="swT('home')" id="nH"><div class="nn">${iconV7('home')}</div><span>الرئيسية</span></div><div class="ni" onclick="oP('tasks')"><div class="nn">${iconV7('tasks')}</div><span>المهام</span></div><div class="ni" onclick="oP('chat')"><div class="nn">${iconV7('spark')}</div><span>المساعد</span></div><div class="ni" onclick="openAllServicesV6()"><div class="nn">${iconV7('grid')}</div><span>الخدمات</span></div>`;
+  }
+
+  function upgradeAllServicesIconsV7() {
+    const map = {chat:'spark',lib:'book',quiz:'quiz',plan:'calendar',flash:'cards',research:'doc',tasks:'tasks',sch:'calendar',reminders:'bell',exams:'clipboard',notes:'note',pomo:'clock',tracker:'chart',gpa:'target',achieve:'trophy',cal:'calendar'};
+    document.querySelectorAll('#ipAllServicesV6 .fc').forEach(card => {
+      const action = card.getAttribute('onclick') || '';
+      const found = Object.keys(map).find(key => action.includes(`'${key}'`));
+      const holder = card.querySelector('.fc-ico');
+      if (holder) holder.innerHTML = iconV7(map[found] || 'grid');
+    });
+    const groupIcons = ['book','calendar','chart','user'];
+    document.querySelectorAll('#ipAllServicesV6 .v6-group-title>span').forEach((span,index) => span.innerHTML = iconV7(groupIcons[index] || 'grid'));
+    const accountButtons = document.querySelectorAll('#ipAllServicesV6 .v6-link');
+    if (accountButtons[0]) accountButtons[0].innerHTML = `${iconV7('user')}<span>حسابي</span>`;
+    if (accountButtons[1]) accountButtons[1].innerHTML = `${iconV7('shield')}<span>الخصوصية</span>`;
+    if (accountButtons[2]) accountButtons[2].innerHTML = `${iconV7('grid')}<span>الإدارة</span>`;
+  }
+
+  addStylesV7();
+  buildHomeV7();
+  rebuildBottomNavV7();
+  upgradeAllServicesIconsV7();
+  updateDateV7();
+
+  const renderTasksBeforeV7 = rT;
+  rT = function () { renderTasksBeforeV7(); updateGoalV7(); };
+  const name = SecureStorage.get('na');
+  if (name && document.getElementById('dN')) document.getElementById('dN').textContent = name;
+  initGreet(); rT(); uCC(); updStE(); updTodayList(); updateGoalV7();
+  document.getElementById('v7AskInput')?.addEventListener('keydown', event => { if (event.key === 'Enter') sendFromHomeV7(); });
+  console.info('Sahhilha V7 merged design loaded');
+})();
 
